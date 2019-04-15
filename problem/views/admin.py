@@ -541,7 +541,7 @@ class ExportProblemAPI(APIView):
         with zipfile.ZipFile(path, "w") as zip_file:
             for index, problem in enumerate(problems):
                 self.process_one_problem(zip_file=zip_file, user=request.user, problem=problem, index=index + 1)
-        delete_files.apply_async((path,), countdown=300)
+        delete_files.send_with_options(args=(path,), delay=300_000)
         resp = FileResponse(open(path, "rb"))
         resp["Content-Type"] = "application/zip"
         resp["Content-Disposition"] = f"attachment;filename=problem-export.zip"
@@ -654,7 +654,7 @@ class FPSProblemImport(CSRFExemptAPIView):
                                input_description=problem_data["input"],
                                output_description=problem_data["output"],
                                hint=problem_data["hint"],
-                               test_case_score=[],
+                               test_case_score=problem_data["test_case_score"],
                                time_limit=time_limit,
                                memory_limit=problem_data["memory_limit"]["value"],
                                samples=problem_data["samples"],
@@ -688,12 +688,16 @@ class FPSProblemImport(CSRFExemptAPIView):
                 test_case_id = rand_str()
                 test_case_dir = os.path.join(settings.TEST_CASE_DIR, test_case_id)
                 os.mkdir(test_case_dir)
-                helper.save_test_case(_problem, test_case_dir)
+                score = []
+                for item in helper.save_test_case(_problem, test_case_dir)["test_cases"].values():
+                    score.append({"score": 0, "input_name": item["input_name"],
+                                  "output_name": item.get("output_name")})
                 problem_data = helper.save_image(_problem, settings.UPLOAD_DIR, settings.UPLOAD_PREFIX)
                 s = FPSProblemSerializer(data=problem_data)
                 if not s.is_valid():
                     return self.error(f"Parse FPS file error: {s.errors}")
                 problem_data = s.data
                 problem_data["test_case_id"] = test_case_id
+                problem_data["test_case_score"] = score
                 self._create_problem(problem_data, request.user)
         return self.success({"import_count": len(problems)})
