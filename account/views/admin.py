@@ -219,15 +219,15 @@ class ChangeUserpasswordAPI(APIView):
         data = request.data
         suffix = data["suffix"]
         right_length = data["right_length"]
+        target_name = data["target_name"]
         
         try:
-            for user in User.objects.all():
-                if len(user.username) == 14:
-                    newpass = suffix
-                    if right_length > 0:
-                        newpass = user.username[-right_length:] + suffix
-                    user.set_password(newpass)
-                    user.save()
+            for user in User.objects.filter(username__contains=target_name):
+                newpass = suffix
+                if right_length > 0:
+                    newpass = user.username[-right_length:] + suffix
+                user.set_password(newpass)
+                user.save()
             return self.success()
         except IntegrityError as e:
             return self.error(str(e).split("\n")[1])

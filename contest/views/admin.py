@@ -196,11 +196,14 @@ class ACMContestHelper(APIView):
 
 
 class DownloadContestSubmissions(APIView):
-    def _dump_submissions(self, contest, exclude_admin=True):
+    def _dump_submissions(self, contest, exclude_admin=True, dlType="0"):
         problem_ids = contest.problem_set.all().values_list("id", "_id")
         id2display_id = {k[0]: k[1] for k in problem_ids}
         ac_map = {k[0]: False for k in problem_ids}
-        submissions = Submission.objects.filter(contest=contest, result=JudgeStatus.ACCEPTED).order_by("-create_time")
+        if dlType == "0": # download all
+            submissions = Submission.objects.filter(contest=contest).order_by("-create_time")
+        else:
+            submissions = Submission.objects.filter(contest=contest, result=JudgeStatus.ACCEPTED).order_by("-create_time")
         user_ids = submissions.values_list("user_id", flat=True)
         users = User.objects.filter(id__in=user_ids)
         path = f"/tmp/{rand_str()}.zip"
@@ -233,7 +236,8 @@ class DownloadContestSubmissions(APIView):
             return self.error("Contest does not exist")
 
         exclude_admin = request.GET.get("exclude_admin") == "1"
-        zip_path = self._dump_submissions(contest, exclude_admin)
+        dlType = request.GET.get("dlType")
+        zip_path = self._dump_submissions(contest, exclude_admin, dlType)
         delete_files.send_with_options(args=(zip_path,), delay=300_000)
         resp = FileResponse(open(zip_path, "rb"))
         resp["Content-Type"] = "application/zip"

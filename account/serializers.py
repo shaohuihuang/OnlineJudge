@@ -43,8 +43,9 @@ class GenerateUserSerializer(serializers.Serializer):
     password_length = serializers.IntegerField(max_value=16, default=8)
 
 class ChangeUserpasswordSerializer(serializers.Serializer):
-    suffix = serializers.CharField(max_length=16, allow_blank=False)
-    right_length = serializers.IntegerField(max_value=14, default=4)
+    suffix = serializers.CharField(max_length=16, allow_blank=False, default='123456')
+    right_length = serializers.IntegerField()
+    target_name = serializers.CharField(max_length=16, allow_blank=False)
 
 class ImportUserSeralizer(serializers.Serializer):
     users = serializers.ListField(
