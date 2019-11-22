@@ -18,13 +18,47 @@ from utils.cache import cache
 from utils.constants import CacheKey
 
 from googletrans import Translator
+import re
 
 logger = logging.getLogger(__name__)
 
 def GoogleTranslate(msg):
     translator = Translator(service_urls=['translate.google.cn'])
-    translation = translator.translate(msg, src='en', dest='zh-cn')
-    return translation.text
+    # 逐句翻译
+    lines = msg.splitlines()
+    trans = ''
+    for line in lines:
+        if line is None: # 空行不翻译
+            trans += '\n'
+        elif line.find('-fmax-errors=3') != -1: # 最后几行直接翻译
+            trans += '由于 -fmax-errors=3，编译终止。\n'
+        elif line.find('cc1') != -1: # 最后几行直接翻译
+            trans += 'cc1：所有警告都被视为错误\n'        	  
+        elif line.find('main.c') == -1: # 代码行不翻译，直接拼
+            trans += line + '\n'        
+        else:
+            # 替换''中为GGG
+            p1 = re.compile(r"['](.*?)[']")
+            g1 = re.findall(p1, line)
+            t1 = re.sub(p1, 'GGG', line)
+
+            # 替换[]中为HHH
+            p2 = re.compile(r"[\[](.*?)[\]]")
+            g2 = re.findall(p2, t1)
+            t2 = re.sub(p2, 'HHH', t1)
+
+            translation = translator.translate(t2, src='en', dest='zh-cn')
+            result = translation.text
+
+            for g in g1:
+                result = result.replace('GGG', " '"+g+"' ", 1)
+
+            for g in g2:
+                result = result.replace('HHH', " ["+g+"] ", 1)
+            
+            trans += result + '\n'
+
+    return trans
 
         
 # 继续处理在队列中的问题
