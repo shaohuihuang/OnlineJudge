@@ -160,7 +160,7 @@ _py3_lang_config = {
 //APPEND END""",
     "compile": {
         "src_name": "solution.py",
-        "exe_name": "__pycache__/solution.cpython-35.pyc",
+        "exe_name": "__pycache__/solution.cpython-36.pyc",
         "max_cpu_time": 3000,
         "max_real_time": 10000,
         "max_memory": 128 * 1024 * 1024,
@@ -169,7 +169,34 @@ _py3_lang_config = {
     "run": {
         "command": "/usr/bin/python3 {exe_path}",
         "seccomp_rule": "general",
-        "env": default_env
+        "env": default_env + ["PYTHONIOENCODING=utf-8"]
+    }
+}
+
+_go_lang_config = {
+    "template": """//PREPEND BEGIN
+//PREPEND END
+
+//TEMPLATE BEGIN
+//TEMPLATE END
+
+//APPEND BEGIN
+//APPEND END""",
+    "compile": {
+        "src_name": "main.go",
+        "exe_name": "main",
+        "max_cpu_time": 3000,
+        "max_real_time": 5000,
+        "max_memory": 1024 * 1024 * 1024,
+        "compile_command": "/usr/bin/go build -o {exe_path} {src_path}",
+        "env": ["GOCACHE=/tmp"]
+    },
+    "run": {
+        "command": "{exe_path}",
+        "seccomp_rule": "",
+        # 降低内存占用
+        "env": ["GODEBUG=madvdontneed=1"] + default_env,
+        "memory_limit_check_only": 1
     }
 }
 
@@ -180,5 +207,6 @@ languages = [
      "name": "C++", "description": "G++ 5.4", "content_type": "text/x-c++src"},
     {"config": _java_lang_config, "name": "Java", "description": "OpenJDK 1.8", "content_type": "text/x-java"},
     {"config": _py2_lang_config, "name": "Python2", "description": "Python 2.7", "content_type": "text/x-python"},
-    {"config": _py3_lang_config, "name": "Python3", "description": "Python 3.5", "content_type": "text/x-python"},
+    {"config": _py3_lang_config, "name": "Python3", "description": "Python 3.6", "content_type": "text/x-python"},
+    {"config": _go_lang_config, "name": "Golang", "description": "Golang 1.14", "content_type": "text/x-go"},
 ]
