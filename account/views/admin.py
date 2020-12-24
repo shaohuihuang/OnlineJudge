@@ -31,8 +31,17 @@ class UserAdminAPI(APIView):
         for user_data in data:
             if len(user_data) != 3 or len(user_data[0]) > 32:
                 return self.error(f"Error occurred while processing data '{user_data}'")
-            #username real_name classroom(school)
-            user_list.append(User(username=user_data[0],password=make_password('123456')))
+
+            # check if user already exists
+            user = User.objects.filter(username=user_data[0]).first()
+            if user is not None:
+                # already exists, update classroom(school)
+                p = UserProfile.objects.get(user=user)
+                p.school = user_data[2]
+                p.save()
+            else:
+                #username real_name classroom(school)
+                user_list.append(User(username=user_data[0],password=make_password('123456')))
 
         try:
             with transaction.atomic():
