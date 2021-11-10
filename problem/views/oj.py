@@ -216,6 +216,8 @@ class DLTestCaseAPI(APIView, DLTestCaseZipProcessor):
             return self.error("Parameter error, problem_id is required")
         try:
             problem = Problem.objects.get(id=problem_id)
+            if problem.source != 'xmu':
+                return self.error("Problem does not support download")
         except Problem.DoesNotExist:
             return self.error("Problem does not exists")
 
