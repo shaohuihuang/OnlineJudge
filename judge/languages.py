@@ -189,24 +189,52 @@ _go_lang_config = {
         "max_real_time": 5000,
         "max_memory": 1024 * 1024 * 1024,
         "compile_command": "/usr/bin/go build -o {exe_path} {src_path}",
-        "env": ["GOCACHE=/tmp"]
+        "env": ["GOCACHE=/tmp", "GOPATH=/tmp", "GOMAXPROCS=1"] + default_env
     },
     "run": {
         "command": "{exe_path}",
-        "seccomp_rule": "",
+        "seccomp_rule": "golang",
         # 降低内存占用
-        "env": ["GODEBUG=madvdontneed=1"] + default_env,
+        "env": ["GODEBUG=madvdontneed=1", "GOMAXPROCS=1"] + default_env,
+        "memory_limit_check_only": 1
+    }
+}
+
+_node_lang_config = {
+    "template": """//PREPEND BEGIN
+//PREPEND END
+
+//TEMPLATE BEGIN
+//TEMPLATE END
+
+//APPEND BEGIN
+//APPEND END""",
+    "compile": {
+        "src_name": "main.js",
+        "exe_name": "main.js",
+        "max_cpu_time": 3000,
+        "max_real_time": 5000,
+        "max_memory": 1024 * 1024 * 1024,
+        "compile_command": "/usr/bin/node --check {src_path}",
+        "env": default_env
+    },
+    "run": {
+        "command": "/usr/bin/node {exe_path}",
+        "seccomp_rule": "node",
+        # 降低内存占用
+        "env": default_env,
         "memory_limit_check_only": 1
     }
 }
 
 languages = [
     {"config": _c_lang_config, "spj": {"compile": _c_lang_spj_compile, "config": _c_lang_spj_config},
-     "name": "C", "description": "GCC 5.4", "content_type": "text/x-csrc"},
+     "name": "C", "description": "GCC 9.4", "content_type": "text/x-csrc"},
     {"config": _cpp_lang_config, "spj": {"compile": _cpp_lang_spj_compile, "config": _cpp_lang_spj_config},
-     "name": "C++", "description": "G++ 5.4", "content_type": "text/x-c++src"},
-    {"config": _java_lang_config, "name": "Java", "description": "OpenJDK 1.8", "content_type": "text/x-java"},
+     "name": "C++", "description": "G++ 9.4", "content_type": "text/x-c++src"},
+    {"config": _java_lang_config, "name": "Java", "description": "OpenJDK 11", "content_type": "text/x-java"},
     {"config": _py2_lang_config, "name": "Python2", "description": "Python 2.7", "content_type": "text/x-python"},
     {"config": _py3_lang_config, "name": "Python3", "description": "Python 3.6", "content_type": "text/x-python"},
-    {"config": _go_lang_config, "name": "Golang", "description": "Golang 1.14", "content_type": "text/x-go"},
+    {"config": _go_lang_config, "name": "Golang", "description": "Golang 1.17", "content_type": "text/x-go"},
+    {"config": _node_lang_config, "name": "JavaScript", "description": "Node 14", "content_type": "text/javascript"},
 ]

@@ -1,7 +1,7 @@
 import hashlib
 import json
 import os
-import shutil
+# import shutil
 import tempfile
 import zipfile
 from wsgiref.util import FileWrapper
@@ -542,7 +542,7 @@ class ExportProblemAPI(APIView):
         delete_files.send_with_options(args=(path,), delay=300_000)
         resp = FileResponse(open(path, "rb"))
         resp["Content-Type"] = "application/zip"
-        resp["Content-Disposition"] = f"attachment;filename=problem-export.zip"
+        resp["Content-Disposition"] = "attachment;filename=problem-export.zip"
         return resp
 
 
@@ -676,10 +676,10 @@ class FPSProblemImport(CSRFExemptAPIView):
             with tempfile.NamedTemporaryFile("wb") as tf:
                 for chunk in file.chunks(4096):
                     tf.file.write(chunk)
-                
+
                 tf.file.flush()
                 os.fsync(tf.file)
-                
+
                 problems = FPSParser(tf.name).parse()
         else:
             return self.error("Parse upload file error")
