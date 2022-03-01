@@ -29,7 +29,7 @@ class UserAdminAPI(APIView):
 
         user_list = []
         for user_data in data:
-            if len(user_data) != 3 or len(user_data[0]) > 32:
+            if len(user_data) != 4 or len(user_data[0]) > 32:
                 return self.error(f"Error occurred while processing data '{user_data}'")
 
             # check if user already exists
@@ -55,7 +55,6 @@ class UserAdminAPI(APIView):
                     p.school = user_data[2]
                     p.language = 'zh-CN'
                     p.save()
-
             return self.success()
         except IntegrityError as e:
             # Extract detail from exception message
@@ -171,7 +170,7 @@ class GenerateUserAPI(APIView):
             raw_data = f.read()
         os.remove(file_path)
         response = HttpResponse(raw_data)
-        response["Content-Disposition"] = f"attachment; filename=users.xlsx"
+        response["Content-Disposition"] = "attachment; filename=users.xlsx"
         response["Content-Type"] = "application/xlsx"
         return response
 
