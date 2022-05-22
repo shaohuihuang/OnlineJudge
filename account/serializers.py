@@ -44,6 +44,7 @@ class GenerateUserSerializer(serializers.Serializer):
 
 class ChangeUserpasswordSerializer(serializers.Serializer):
     suffix = serializers.CharField(max_length=16, allow_blank=False, default='123456')
+    match_type = serializers.CharField()
     right_length = serializers.IntegerField()
     target_name = serializers.CharField(max_length=16, allow_blank=False)
 
@@ -54,14 +55,18 @@ class ImportUserSeralizer(serializers.Serializer):
 
 class UserAdminSerializer(serializers.ModelSerializer):
     real_name = serializers.SerializerMethodField()
+    school = serializers.SerializerMethodField()
 
     class Meta:
         model = User
-        fields = ["id", "username", "email", "admin_type", "problem_permission", "real_name",
+        fields = ["id", "username", "email", "school", "admin_type", "problem_permission", "real_name",
                   "create_time", "last_login", "two_factor_auth", "open_api", "is_disabled"]
 
     def get_real_name(self, obj):
         return obj.userprofile.real_name
+
+    def get_school(self, obj):
+        return obj.userprofile.school
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -74,6 +79,7 @@ class UserSerializer(serializers.ModelSerializer):
 class UserProfileSerializer(serializers.ModelSerializer):
     user = UserSerializer()
     real_name = serializers.SerializerMethodField()
+    school = serializers.SerializerMethodField()
 
     class Meta:
         model = UserProfile
@@ -85,6 +91,9 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
     def get_real_name(self, obj):
         return obj.real_name if self.show_real_name else None
+    
+    def get_school(self, obj):
+        return obj.school
 
 
 class EditUserSerializer(serializers.Serializer):

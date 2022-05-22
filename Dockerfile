@@ -1,5 +1,5 @@
 FROM python:3.8-alpine3.14
-
+RUN set -eux && sed -i 's/dl-cdn.alpinelinux.org/mirrors.ustc.edu.cn/g' /etc/apk/repositories
 ENV OJ_ENV production
 
 ADD . /app

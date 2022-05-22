@@ -28,8 +28,9 @@ class UserAdminAPI(APIView):
         data = request.data["users"]
 
         user_list = []
+        count = 0
         for user_data in data:
-            if len(user_data) != 4 or len(user_data[0]) > 32:
+            if len(user_data) != 3 or len(user_data[0]) > 32:
                 return self.error(f"Error occurred while processing data '{user_data}'")
 
             # check if user already exists
@@ -39,28 +40,36 @@ class UserAdminAPI(APIView):
                 p = UserProfile.objects.get(user=user)
                 p.school = user_data[2]
                 p.save()
+                count = count + 1
             else:
                 #username real_name classroom(school)
                 user_list.append(User(username=user_data[0],password=make_password('123456')))
+        
+        if not user_list:
+            if count > 0:
+                return self.success()
+            else:
+                return self.error('empty user list')
+        else:
+            try:
+                with transaction.atomic():
+                    ret = User.objects.bulk_create(user_list)
+                    UserProfile.objects.bulk_create([UserProfile(user=user) for user in ret])
 
-        try:
-            with transaction.atomic():
-                ret = User.objects.bulk_create(user_list)
-                UserProfile.objects.bulk_create([UserProfile(user=user) for user in ret])
+                    for user_data in data:
+                        user = User.objects.get(username=user_data[0])
+                        p = UserProfile.objects.get(user=user)
+                        p.real_name = user_data[1]
+                        p.school = user_data[2]
+                        p.language = 'zh-CN'
+                        p.save()
 
-                for user_data in data:
-                    user = User.objects.get(username=user_data[0])
-                    p = UserProfile.objects.get(user=user)
-                    p.real_name = user_data[1]
-                    p.school = user_data[2]
-                    p.language = 'zh-CN'
-                    p.save()
-            return self.success()
-        except IntegrityError as e:
-            # Extract detail from exception message
-            #    duplicate key value violates unique constraint "user_username_key"
-            #    DETAIL:  Key (username)=(root11) already exists.
-            return self.error(str(e).split("\n")[1])
+                return self.success()
+            except IntegrityError as e:
+                # Extract detail from exception message
+                #    duplicate key value violates unique constraint "user_username_key"
+                #    DETAIL:  Key (username)=(root11) already exists.
+                return self.error(str(e).split("\n")[1])
 
     @validate_serializer(EditUserSerializer)
     @super_admin_required
@@ -170,7 +179,7 @@ class GenerateUserAPI(APIView):
             raw_data = f.read()
         os.remove(file_path)
         response = HttpResponse(raw_data)
-        response["Content-Disposition"] = "attachment; filename=users.xlsx"
+        response["Content-Disposition"] = f"attachment; filename=users.xlsx"
         response["Content-Type"] = "application/xlsx"
         return response
 
@@ -226,16 +235,30 @@ class ChangeUserpasswordAPI(APIView):
     def post(self, request):
         data = request.data
         suffix = data["suffix"]
+        match_type = data["match_type"]
         right_length = data["right_length"]
         target_name = data["target_name"]
         
-        try:
-            for user in User.objects.filter(username__contains=target_name):
-                newpass = suffix
-                if right_length > 0:
-                    newpass = user.username[-right_length:] + suffix
-                user.set_password(newpass)
-                user.save()
-            return self.success()
-        except IntegrityError as e:
-            return self.error(str(e).split("\n")[1])
+        if match_type == "type_username":
+            try:
+                for user in User.objects.filter(username__contains=target_name):
+                    newpass = suffix
+                    if right_length > 0:
+                        newpass = user.username[-right_length:] + suffix
+                    user.set_password(newpass)
+                    user.save()
+                return self.success()
+            except IntegrityError as e:
+                return self.error(str(e).split("\n")[1])
+        else:
+            try:
+                for userprofile in UserProfile.objects.filter(school__contains=target_name):
+                    user = userprofile.user
+                    newpass = suffix
+                    if right_length > 0:
+                        newpass = user.username[-right_length:] + suffix
+                    user.set_password(newpass)
+                    user.save()
+                return self.success()
+            except IntegrityError as e:
+                return self.error(str(e).split("\n")[1])
